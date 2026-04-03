@@ -50,7 +50,8 @@ function activate(context) {
         else {
             currentPanel = vscode.window.createWebviewPanel('plantumlPreview', 'PlantUML Preview', vscode.ViewColumn.Beside, {
                 enableScripts: true,
-                localResourceRoots: [vscode.Uri.file(path.join(context.extensionPath, 'media'))]
+                localResourceRoots: [vscode.Uri.file(path.join(context.extensionPath, 'media'))],
+                retainContextWhenHidden: true
             });
             currentPanel.webview.html = getWebviewContent(context, currentPanel.webview);
             currentPanel.webview.onDidReceiveMessage(async (message) => {
@@ -112,7 +113,7 @@ function updateWebviewFromEditor(panel, document) {
         document.languageId === 'plantuml' ||
         ['.pu', '.puml', '.plantuml'].includes(ext);
     if (isPuml) {
-        panel.webview.postMessage({ command: 'update', text });
+        panel.webview.postMessage({ command: 'update', text, uri: document.uri.toString() });
     }
 }
 function getWebviewContent(context, webview) {
@@ -286,13 +287,37 @@ function getWebviewContent(context, webview) {
         console.error("Error loading plantuml:", err);
       }
 
+      let currentUri = null;
+      let lastRenderedText = null;
+      const states = {};
+
       window.addEventListener('message', event => {
         const message = event.data;
         if (message.command === 'update') {
           try {
-             // Reset zoom/pan on update for a fresh view
-             scale = 1; translateX = 0; translateY = 0;
-             updateTransform();
+             const uri = message.uri;
+             if (!states[uri]) {
+                states[uri] = { scale: 1, translateX: 0, translateY: 0 };
+             }
+
+             // Save active state before switching rendering context
+             if (currentUri && currentUri !== uri) {
+                states[currentUri].scale = scale;
+                states[currentUri].translateX = translateX;
+                states[currentUri].translateY = translateY;
+             }
+
+             // Restore the target file's state
+             if (currentUri !== uri) {
+               currentUri = uri;
+               scale = states[uri].scale;
+               translateX = states[uri].translateX;
+               translateY = states[uri].translateY;
+               updateTransform();
+             }
+
+             if (message.text === lastRenderedText) return;
+             lastRenderedText = message.text;
 
              const lines = message.text.split(/\\r\\n|\\r|\\n/);
              window.plantuml.render(lines, "out");
