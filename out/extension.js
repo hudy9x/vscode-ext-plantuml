@@ -41,6 +41,18 @@ function activate(context) {
                 localResourceRoots: [vscode.Uri.file(path.join(context.extensionPath, 'media'))]
             });
             currentPanel.webview.html = getWebviewContent(context, currentPanel.webview);
+            currentPanel.webview.onDidReceiveMessage(async (message) => {
+                if (message.command === 'download') {
+                    const uri = await vscode.window.showSaveDialog({
+                        filters: { 'SVG files': ['svg'] },
+                        defaultUri: vscode.Uri.file('diagram.svg')
+                    });
+                    if (uri) {
+                        await vscode.workspace.fs.writeFile(uri, Buffer.from(message.content, 'utf8'));
+                        vscode.window.showInformationMessage('Diagram saved successfully!');
+                    }
+                }
+            }, undefined, context.subscriptions);
             currentPanel.onDidDispose(() => {
                 currentPanel = undefined;
             }, null, context.subscriptions);
@@ -94,20 +106,69 @@ function getWebviewContent(context, webview) {
   <style>
     body {
       background-color: white;
-      padding: 10px;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+    }
+    #container {
+      width: 100vw;
+      height: 100vh;
+      cursor: grab;
+      position: relative;
+    }
+    #container:active {
+      cursor: grabbing;
     }
     #out {
-      width: 100%;
-      height: 100%;
+      transform-origin: top left;
+      width: fit-content;
+      height: fit-content;
     }
     #loading {
       display: none;
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 1000;
+      background: rgba(255, 255, 255, 0.8);
+      padding: 4px 8px;
+    }
+    .controls {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 10;
+      display: flex;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.9);
+      padding: 8px;
+      border-radius: 6px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
+    .controls button {
+      cursor: pointer;
+      padding: 4px 10px;
+      border: 1px solid #ccc;
+      background: white;
+      border-radius: 4px;
+    }
+    .controls button:hover {
+      background: #f0f0f0;
     }
   </style>
 </head>
 <body>
   <div id="loading">Loading PlantUML...</div>
-  <div id="out"></div>
+  <div class="controls">
+    <button id="zoom-in" title="Zoom In">+</button>
+    <button id="zoom-out" title="Zoom Out">-</button>
+    <button id="download" title="Download SVG">Download As SVG</button>
+  </div>
+  <div id="container">
+    <div id="out"></div>
+  </div>
 
   <script nonce="${nonce}" src="${plantumlScriptUri}"></script>
   <script nonce="${nonce}" src="${vizGlobalScriptUri}"></script>
@@ -116,6 +177,73 @@ function getWebviewContent(context, webview) {
       const vscode = acquireVsCodeApi();
       const loading = document.getElementById("loading");
       const out = document.getElementById("out");
+      const container = document.getElementById("container");
+
+      let scale = 1;
+      let translateX = 0;
+      let translateY = 0;
+      let isDragging = false;
+      let startX = 0;
+      let startY = 0;
+
+      function updateTransform() {
+        out.style.transform = \`translate(\${translateX}px, \${translateY}px) scale(\${scale})\`;
+      }
+
+      function zoom(delta, clientX, clientY) {
+        const oldScale = scale;
+        scale *= (delta < 0 ? 1.1 : 0.9);
+        scale = Math.max(0.1, Math.min(scale, 10));
+
+        // Adjust translation to zoom towards the mouse cursor
+        if (clientX !== undefined && clientY !== undefined) {
+           const rect = container.getBoundingClientRect();
+           const x = clientX - rect.left;
+           const y = clientY - rect.top;
+           translateX = x - (x - translateX) * (scale / oldScale);
+           translateY = y - (y - translateY) * (scale / oldScale);
+        } else {
+           // Center zoom if no cursor specified
+           const rect = container.getBoundingClientRect();
+           const x = rect.width / 2;
+           const y = rect.height / 2;
+           translateX = x - (x - translateX) * (scale / oldScale);
+           translateY = y - (y - translateY) * (scale / oldScale);
+        }
+        updateTransform();
+      }
+
+      container.addEventListener('wheel', e => {
+        e.preventDefault();
+        zoom(e.deltaY, e.clientX, e.clientY);
+      });
+
+      container.addEventListener('mousedown', e => {
+        isDragging = true;
+        startX = e.clientX - translateX;
+        startY = e.clientY - translateY;
+      });
+
+      window.addEventListener('mousemove', e => {
+        if (!isDragging) return;
+        translateX = e.clientX - startX;
+        translateY = e.clientY - startY;
+        updateTransform();
+      });
+
+      window.addEventListener('mouseup', () => {
+        isDragging = false;
+      });
+
+      document.getElementById('zoom-in').addEventListener('click', () => zoom(-1));
+      document.getElementById('zoom-out').addEventListener('click', () => zoom(1));
+      
+      document.getElementById('download').addEventListener('click', () => {
+        const svgHTML = out.innerHTML;
+        if (svgHTML && svgHTML.trim() !== "") {
+           vscode.postMessage({ command: 'download', content: svgHTML });
+        }
+      });
 
       try {
         plantumlLoad();
@@ -127,6 +255,10 @@ function getWebviewContent(context, webview) {
         const message = event.data;
         if (message.command === 'update') {
           try {
+             // Reset zoom/pan on update for a fresh view
+             scale = 1; translateX = 0; translateY = 0;
+             updateTransform();
+
              const lines = message.text.split(/\\r\\n|\\r|\\n/);
              window.plantuml.render(lines, "out");
           } catch(e) {
