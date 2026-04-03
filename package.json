@@ -2,7 +2,7 @@
   "name": "plantuml-preview",
   "displayName": "PlantUML Preview",
   "description": "A Live PlantUML Preview using browser scripts.",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "repository": {
     "type": "git",
     "url": "https://github.com/your-username/plantuml-extension"
