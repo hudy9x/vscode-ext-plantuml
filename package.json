@@ -2,10 +2,11 @@
   "name": "plantuml-preview",
   "displayName": "PlantUML Preview",
   "description": "A Live PlantUML Preview using browser scripts.",
+  "publisher": "hudy9x",
   "version": "0.0.7",
   "repository": {
     "type": "git",
-    "url": "https://github.com/your-username/plantuml-extension"
+    "url": "https://github.com/hudy9x/vscode-ext-plantuml"
   },
   "engines": {
     "vscode": "^1.80.0"
