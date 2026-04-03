@@ -55,31 +55,62 @@ function activate(context) {
             });
             currentPanel.webview.html = getWebviewContent(context, currentPanel.webview);
             currentPanel.webview.onDidReceiveMessage(async (message) => {
-                if (message.command === 'download') {
-                    const uri = await vscode.window.showSaveDialog({
-                        filters: { 'SVG files': ['svg'] },
-                        defaultUri: vscode.Uri.file('diagram.svg')
-                    });
-                    if (uri) {
-                        await vscode.workspace.fs.writeFile(uri, Buffer.from(message.content, 'utf8'));
-                        vscode.window.showInformationMessage('Diagram saved successfully!');
+                try {
+                    if (message.command === 'download') {
+                        const svgMatch = message.content.match(/<svg[\s\S]*?<\/svg>/i);
+                        const cleanContent = svgMatch ? svgMatch[0] : message.content;
+                        const uri = await vscode.window.showSaveDialog({
+                            filters: { 'SVG files': ['svg'] },
+                            defaultUri: vscode.Uri.file('diagram.svg')
+                        });
+                        if (uri) {
+                            await vscode.workspace.fs.writeFile(uri, Buffer.from(cleanContent, 'utf8'));
+                            vscode.window.showInformationMessage('Diagram saved successfully!');
+                        }
+                    }
+                    if (message.command === 'download-png') {
+                        const svgMatch = message.content.match(/<svg[\s\S]*?<\/svg>/i);
+                        if (!svgMatch) {
+                            vscode.window.showErrorMessage('Error: Could not locate SVG element in the preview payload.');
+                            return;
+                        }
+                        const cleanSvg = svgMatch[0];
+                        const uri = await vscode.window.showSaveDialog({
+                            filters: { 'PNG files': ['png'] },
+                            defaultUri: vscode.Uri.file('diagram.png')
+                        });
+                        if (uri) {
+                            // Ensure a valid .png extension on the user's URI
+                            let finalUri = uri;
+                            if (!finalUri.fsPath.toLowerCase().endsWith('.png')) {
+                                finalUri = vscode.Uri.file(finalUri.fsPath + '.png');
+                            }
+                            await vscode.window.withProgress({
+                                location: vscode.ProgressLocation.Notification,
+                                title: "Converting PlantUML to PNG...",
+                                cancellable: false
+                            }, async () => {
+                                try {
+                                    // Explicit SVG dumping per previous requirement
+                                    const svgUri = vscode.Uri.file(finalUri.fsPath.replace(/\.png$/i, '.svg'));
+                                    await vscode.workspace.fs.writeFile(svgUri, Buffer.from(cleanSvg, 'utf8'));
+                                    const resvg = new resvg_js_1.Resvg(Buffer.from(cleanSvg));
+                                    const pngData = resvg.render();
+                                    const pngBuffer = pngData.asPng();
+                                    await vscode.workspace.fs.writeFile(finalUri, pngBuffer);
+                                    // Remove the temporary .svg file after generation is complete
+                                    await vscode.workspace.fs.delete(svgUri);
+                                    vscode.window.showInformationMessage('Diagram saved as PNG successfully!');
+                                }
+                                catch (e) {
+                                    vscode.window.showErrorMessage('Resvg backend failed to render PNG: ' + e.message);
+                                }
+                            });
+                        }
                     }
                 }
-                if (message.command === 'download-png') {
-                    const uri = await vscode.window.showSaveDialog({
-                        filters: { 'PNG files': ['png'] },
-                        defaultUri: vscode.Uri.file('diagram.png')
-                    });
-                    if (uri) {
-                        const svgUri = vscode.Uri.file(uri.fsPath.replace(/\.png$/i, '.svg'));
-                        await vscode.workspace.fs.writeFile(svgUri, Buffer.from(message.content, 'utf8'));
-                        const svgBuffer = await vscode.workspace.fs.readFile(svgUri);
-                        const resvg = new resvg_js_1.Resvg(Buffer.from(svgBuffer));
-                        const pngData = resvg.render();
-                        const pngBuffer = pngData.asPng();
-                        await vscode.workspace.fs.writeFile(uri, pngBuffer);
-                        vscode.window.showInformationMessage('Diagram saved as SVG and PNG successfully!');
-                    }
+                catch (e) {
+                    vscode.window.showErrorMessage('Unexpected error during download: ' + e.message);
                 }
             }, undefined, context.subscriptions);
             currentPanel.onDidDispose(() => {
