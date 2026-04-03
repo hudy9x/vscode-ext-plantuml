@@ -31,7 +31,7 @@ export function activate(context: vscode.ExtensionContext) {
         null,
         context.subscriptions
       );
-      
+
       updateWebviewFromActiveEditor(currentPanel);
     }
   });
@@ -65,9 +65,9 @@ function updateWebviewFromActiveEditor(panel: vscode.WebviewPanel) {
 function updateWebviewFromEditor(panel: vscode.WebviewPanel, document: vscode.TextDocument) {
   const text = document.getText();
   const ext = path.extname(document.uri.fsPath).toLowerCase();
-  const isPuml = text.includes('@start') || 
-                 document.languageId === 'plantuml' || 
-                 ['.pu', '.puml', '.plantuml'].includes(ext);
+  const isPuml = text.includes('@start') ||
+    document.languageId === 'plantuml' ||
+    ['.pu', '.puml', '.plantuml'].includes(ext);
   if (isPuml) {
     panel.webview.postMessage({ command: 'update', text });
   }
@@ -99,7 +99,7 @@ function getWebviewContent(context: vscode.ExtensionContext, webview: vscode.Web
   <link rel="stylesheet" href="${mainCssUri}">
   <style>
     body {
-      background-color: transparent;
+      background-color: white;
       padding: 10px;
     }
     #out {
@@ -155,4 +155,4 @@ function getNonce() {
   return text;
 }
 
-export function deactivate() {}
+export function deactivate() { }

@@ -93,7 +93,7 @@ function getWebviewContent(context, webview) {
   <link rel="stylesheet" href="${mainCssUri}">
   <style>
     body {
-      background-color: transparent;
+      background-color: white;
       padding: 10px;
     }
     #out {
