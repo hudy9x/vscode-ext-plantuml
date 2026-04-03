@@ -2,7 +2,7 @@
   "name": "plantuml-preview",
   "displayName": "PlantUML Preview",
   "description": "A Live PlantUML Preview using browser scripts.",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "repository": {
     "type": "git",
     "url": "https://github.com/your-username/plantuml-extension"
@@ -50,7 +50,7 @@
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "build": "mkdir -p build && vsce package -o build/",
+    "build": "mkdir -p build && rm -rf build/* && commit-and-tag-version && vsce package -o build/",
     "release": "commit-and-tag-version"
   },
   "devDependencies": {
