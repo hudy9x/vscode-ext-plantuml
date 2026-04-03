@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
+import { Resvg } from '@resvg/resvg-js';
 
 export function activate(context: vscode.ExtensionContext) {
   let currentPanel: vscode.WebviewPanel | undefined = undefined;
@@ -34,6 +35,23 @@ export function activate(context: vscode.ExtensionContext) {
             if (uri) {
               await vscode.workspace.fs.writeFile(uri, Buffer.from(message.content, 'utf8'));
               vscode.window.showInformationMessage('Diagram saved successfully!');
+            }
+          }
+          if (message.command === 'download-png') {
+            const uri = await vscode.window.showSaveDialog({
+              filters: { 'PNG files': ['png'] },
+              defaultUri: vscode.Uri.file('diagram.png')
+            });
+            if (uri) {
+              const svgUri = vscode.Uri.file(uri.fsPath.replace(/\.png$/i, '.svg'));
+              await vscode.workspace.fs.writeFile(svgUri, Buffer.from(message.content, 'utf8'));
+              
+              const svgBuffer = await vscode.workspace.fs.readFile(svgUri);
+              const resvg = new Resvg(Buffer.from(svgBuffer));
+              const pngData = resvg.render();
+              const pngBuffer = pngData.asPng();
+              await vscode.workspace.fs.writeFile(uri, pngBuffer);
+              vscode.window.showInformationMessage('Diagram saved as SVG and PNG successfully!');
             }
           }
         },
@@ -176,6 +194,7 @@ function getWebviewContent(context: vscode.ExtensionContext, webview: vscode.Web
     <button id="zoom-in" title="Zoom In">+</button>
     <button id="zoom-out" title="Zoom Out">-</button>
     <button id="download" title="Download SVG">Download As SVG</button>
+    <button id="download-png" title="Download PNG">Download As PNG</button>
   </div>
   <div id="container">
     <div id="out"></div>
@@ -253,6 +272,13 @@ function getWebviewContent(context: vscode.ExtensionContext, webview: vscode.Web
         const svgHTML = out.innerHTML;
         if (svgHTML && svgHTML.trim() !== "") {
            vscode.postMessage({ command: 'download', content: svgHTML });
+        }
+      });
+
+      document.getElementById('download-png').addEventListener('click', () => {
+        const svgHTML = out.innerHTML;
+        if (svgHTML && svgHTML.trim() !== "") {
+           vscode.postMessage({ command: 'download-png', content: svgHTML });
         }
       });
 

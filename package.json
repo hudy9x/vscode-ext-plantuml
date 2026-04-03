@@ -58,5 +58,8 @@
     "@types/vscode": "^1.80.0",
     "commit-and-tag-version": "^12.7.1",
     "typescript": "^5.1.3"
+  },
+  "dependencies": {
+    "@resvg/resvg-js": "^2.6.2"
   }
 }
