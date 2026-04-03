@@ -49,11 +49,14 @@
   "scripts": {
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./"
+    "watch": "tsc -watch -p ./",
+    "build": "mkdir -p build && vsce package -o build/",
+    "release": "commit-and-tag-version"
   },
   "devDependencies": {
-    "@types/vscode": "^1.80.0",
     "@types/node": "18.x",
+    "@types/vscode": "^1.80.0",
+    "commit-and-tag-version": "^12.7.1",
     "typescript": "^5.1.3"
   }
 }
