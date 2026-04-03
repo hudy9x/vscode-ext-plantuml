@@ -18,13 +18,16 @@ If you just want to run or install this extension manually on your machine witho
 2. Run `npm install` inside the terminal to retrieve developer dependencies.
 3. Press `F5` to open an "Extension Development Host" window. You can open any `.puml` file and test the extension directly!
 
-### 2. Package and Install as a `.vsix` (For Local Use)
-If you want the extension permanently installed inside your VSCode application without running it via the development host:
-1. Ensure you have `vsce` installed globally: `npm install -g @vscode/vsce`
-2. Run `vsce package` in this folder. This will bundle everything and build a file named something like `plantuml-preview-0.0.1.vsix`.
-3. In VSCode, go to the Extensions view (`Cmd+Shift+X` on Mac).
-4. Click the `...` menu at the top right of the Extensions panel and select **Install from VSIX...**.
-5. Select the `.vsix` file you just generated. The extension is now permanently installed!
+### 2. Versioning and Building a `.vsix`
+When making changes, commit them using Conventional Commits (e.g., `feat: ...`, `fix: ...`). Then, to automatically bump the version, update the changelog, and build the final `.vsix` extension file:
+1. Run the unified build command:
+   ```bash
+   npm run build
+   ```
+   This will automatically update the version and changelog, and output the `plantuml-preview-x.x.x.vsix` file into the `build/` directory.
+2. In VSCode, go to the Extensions view (`Cmd+Shift+X` on Mac).
+3. Click the `...` menu at the top right of the Extensions panel and select **Install from VSIX...**.
+4. Select the `.vsix` file from the `build/` folder. The extension is now permanently installed!
 
 ## How to Publish to the VSCode Marketplace
 
