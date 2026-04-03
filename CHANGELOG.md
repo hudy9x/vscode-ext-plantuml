@@ -2,6 +2,8 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.0.7](https://github.com/your-username/plantuml-extension/compare/v0.0.6...v0.0.7) (2026-04-03)
+
 ## [0.0.6](https://github.com/your-username/plantuml-extension/compare/v0.0.5...v0.0.6) (2026-04-03)
 
 
