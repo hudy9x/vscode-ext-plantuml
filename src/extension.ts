@@ -31,7 +31,8 @@ export function activate(context: vscode.ExtensionContext) {
           try {
             if (message.command === 'download') {
               const svgMatch = message.content.match(/<svg[\s\S]*?<\/svg>/i);
-              const cleanContent = svgMatch ? svgMatch[0] : message.content;
+              let cleanContent = svgMatch ? svgMatch[0] : message.content;
+              cleanContent = cleanContent.replace(/(<svg[^>]*>)/i, '$1<style>svg { background-color: white !important; }</style><rect width="100%" height="100%" fill="white"/>');
 
               const uri = await vscode.window.showSaveDialog({
                 filters: { 'SVG files': ['svg'] },
@@ -48,7 +49,8 @@ export function activate(context: vscode.ExtensionContext) {
                 vscode.window.showErrorMessage('Error: Could not locate SVG element in the preview payload.');
                 return;
               }
-              const cleanSvg = svgMatch[0];
+              let cleanSvg = svgMatch[0];
+              cleanSvg = cleanSvg.replace(/(<svg[^>]*>)/i, '$1<style>svg { background-color: white !important; }</style><rect width="100%" height="100%" fill="white"/>');
 
               const uri = await vscode.window.showSaveDialog({
                 filters: { 'PNG files': ['png'] },
@@ -72,7 +74,9 @@ export function activate(context: vscode.ExtensionContext) {
                     const svgUri = vscode.Uri.file(finalUri.fsPath.replace(/\.png$/i, '.svg'));
                     await vscode.workspace.fs.writeFile(svgUri, Buffer.from(cleanSvg, 'utf8'));
                     
-                    const resvg = new Resvg(Buffer.from(cleanSvg));
+                    const resvg = new Resvg(Buffer.from(cleanSvg), {
+                      background: '#ffffff'
+                    });
                     const pngData = resvg.render();
                     const pngBuffer = pngData.asPng();
                     await vscode.workspace.fs.writeFile(finalUri, pngBuffer);
