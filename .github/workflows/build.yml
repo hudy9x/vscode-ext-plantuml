@@ -25,11 +25,19 @@ jobs:
           npm install
           npm install -g @vscode/vsce
 
-      - name: Package VSIX
+      - name: Package VSIX and Publish Release
+        env:
+          GH_TOKEN: ${{ secrets.VSCODE_GITHUB_TOKEN }}
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           npm run build
+
+          if [ "${{ github.event_name }}" = "push" ]; then
+            git push --follow-tags origin main
+            TAG=$(git describe --tags --abbrev=0)
+            gh release create $TAG build/*.vsix --generate-notes
+          fi
 
       - name: Upload VSIX Artifact
         uses: actions/upload-artifact@v4
