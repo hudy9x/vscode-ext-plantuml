@@ -5,7 +5,7 @@ import { Resvg } from '@resvg/resvg-js';
 export function activate(context: vscode.ExtensionContext) {
   let currentPanel: vscode.WebviewPanel | undefined = undefined;
 
-  let disposable = vscode.commands.registerCommand('plantuml-preview.start', () => {
+  const openPreview = () => {
     const columnToShowIn = vscode.window.activeTextEditor
       ? vscode.window.activeTextEditor.viewColumn
       : undefined;
@@ -109,9 +109,13 @@ export function activate(context: vscode.ExtensionContext) {
 
       updateWebviewFromActiveEditor(currentPanel);
     }
-  });
+  };
 
-  context.subscriptions.push(disposable);
+  // Keep a legacy/typo command alias for compatibility with existing keybindings.
+  const commandIds = ['plantuml-preview.start', 'plantuml-preview.stat'];
+  for (const commandId of commandIds) {
+    context.subscriptions.push(vscode.commands.registerCommand(commandId, openPreview));
+  }
 
   context.subscriptions.push(
     vscode.workspace.onDidChangeTextDocument((e) => {

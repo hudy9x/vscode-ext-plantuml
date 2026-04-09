@@ -35,6 +35,11 @@
         "command": "plantuml-preview.start",
         "title": "PlantUML: Open Live Preview",
         "icon": "$(open-preview)"
+      },
+      {
+        "command": "plantuml-preview.stat",
+        "title": "PlantUML: Open Live Preview (Alias)",
+        "icon": "$(open-preview)"
       }
     ],
     "menus": {
