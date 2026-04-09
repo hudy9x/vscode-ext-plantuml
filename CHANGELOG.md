@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## 1.0.2 (2026-04-09)
+
+
+### Bug Fixes
+
+* command plantuml-preview:start not found ([cb8b38b](https://github.com/hudy9x/vscode-ext-plantuml/commit/cb8b38b9d29ea677bff63657634f8d38e8eed8ff))
+
 ## 1.0.1 (2026-04-05)
 
 ## [0.0.7](https://github.com/your-username/plantuml-extension/compare/v0.0.6...v0.0.7) (2026-04-03)
